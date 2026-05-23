@@ -1,2 +1,41 @@
-# MEIA-Framework Requirements
-# Python dependencies for the project
+# ==============================================================================
+# MEIA Framework: Multimodal Emotion, Intention, and Action Recognition
+# Institution: Sunway University, Malaysia
+# ==============================================================================
+
+# 1. Deep Learning Core
+torch>=2.0.0
+torchvision>=0.15.0
+transformers>=4.44.0
+accelerate>=0.33.0
+huggingface-hub>=0.20.0
+sentencepiece>=0.2.0
+
+# 2. Meta DINOv2 Hub Requirements
+omegaconf>=2.3.0
+timm>=0.9.0
+
+# 3. Data Science & Evaluation Metrics
+scikit-learn>=1.3.0
+numpy>=1.26.0
+pandas>=2.0.0
+tqdm>=4.66.0
+
+# 4. Media & Vision Processing
+pillow>=10.3.0
+opencv-python>=4.8.0
+librosa>=0.10.0
+soundfile>=0.12.1
+moviepy>=2.0.0
+openai-whisper>=20240930
+
+# 5. Analysis & PDF Report Generation (tools/analysis/)
+plotly>=5.17.0
+streamlit>=1.35.0
+reportlab>=4.0.0
+matplotlib>=3.8.0
+seaborn>=0.13.0
+
+# 6. APIs & Utilities
+requests>=2.32.0
+kaggle>=1.5.0
