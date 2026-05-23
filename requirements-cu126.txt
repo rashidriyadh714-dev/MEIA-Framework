@@ -1,4 +1,10 @@
+# ==============================================================================
+# MEIA Framework: Multimodal Emotion, Intention, and Action Recognition
+# Environment: PyTorch with CUDA 12.6 Support
+# ==============================================================================
+
 --index-url https://download.pytorch.org/whl/cu126
-torch
-torchvision
-torchaudio
+
+torch>=2.0.0
+torchvision>=0.15.0
+torchaudio>=2.0.0
