@@ -1,14 +1,18 @@
 #!/usr/bin/env python3
+#!/usr/bin/env python3
 """
 MEIA Framework: Multimodal Emotion, Intention, and Action Recognition
-Module: Distributed Training Pipeline
+Module: Distributed Cloud Training Pipeline (Scaling Baseline)
+Author: Imad Gohar and Rashid Riyadh, et al.
+Institution: Sunway University, Malaysia
 
-This script handles the distributed training loop, dynamic loss weighting,
-and multi-task evaluation for the MEIA framework.
+This script handles the high-throughput distributed training loop across 
+cloud instances. It serves as the unconstrained baseline to complement 
+the VRAM-optimized main pipeline (train_meia.py).
 
 Usage:
-    python scripts/train_meia.py \
-        --output-dir checkpoints/meia-training \
+    python scripts/train_distributed.py \
+        --output-dir checkpoints/distributed-training \
         --epochs 6 --batch-size 16 --seeds 41 42 43
 """
 
