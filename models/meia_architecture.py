@@ -1,6 +1,8 @@
 """
 MEIA Framework: Multimodal Emotion, Intention, and Action Recognition
 Module: Core Reliability-Aware Architecture
+Author: Imad Gohar and Rashid Riyadh, et al.
+Institution: Sunway University, Malaysia
 
 This script defines the core MEIA model, integrating DINOv2 and RoBERTa 
 with a dual-layer reliability-aware cross-modal attention mechanism.
