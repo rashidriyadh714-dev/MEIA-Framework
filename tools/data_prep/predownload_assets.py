@@ -2,7 +2,7 @@
 """
 MEIA Framework: Multimodal Emotion, Intention, and Action Recognition
 Module: Foundation Model Pre-Caching Utility
-Author: Rashid, et al.
+Author: Imad Gohar and Rashid Riyadh, et al.
 Institution: Sunway University, Malaysia
 
 This utility handles the pre-downloading and local localization of Hugging Face 
