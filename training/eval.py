@@ -1,7 +1,7 @@
 """
 MEIA Framework: Multimodal Emotion, Intention, and Action Recognition
 Module: Multi-Task Evaluation Metrics Engine
-Author: Rashid, et al.
+Author: Imad Gohar and Rashid Riyadh, et al.
 Institution: Sunway University, Malaysia
 
 This module provides standard evaluation protocols for single-label
