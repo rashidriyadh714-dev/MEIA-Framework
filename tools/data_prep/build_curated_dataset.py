@@ -2,7 +2,7 @@
 """
 MEIA Framework: Multimodal Emotion, Intention, and Action Recognition
 Module: Automated Curated Dataset Architect & Knowledge Distiller
-Author: Rashid, et al.
+Author: Imad Gohar and Rashid Riyadh, et al.
 Institution: Sunway University, Malaysia
 
 This script merges data sanitation with Offline Knowledge Distillation. 
