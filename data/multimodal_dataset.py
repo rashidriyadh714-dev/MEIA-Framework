@@ -1,6 +1,8 @@
 """
 MEIA Framework: Multimodal Emotion, Intention, and Action Recognition
 Module: Multimodal Dataset Engine and Loader Profiles
+Author: Imad Gohar and Rashid Riyadh, et al.
+Institution: Sunway University, Malaysia
 
 This module implements the data loading pipelines, multi-task label formatting,
 and multimodal data augmentation strategies for the MINE and FANE datasets.
