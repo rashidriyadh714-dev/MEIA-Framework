@@ -1,0 +1,2 @@
+# MEIA-Framework Requirements for CUDA 12.6
+# Python dependencies with CUDA 12.6 specific versions
