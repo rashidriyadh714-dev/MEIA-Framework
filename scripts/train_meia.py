@@ -1,14 +1,13 @@
 #!/usr/bin/env python3
 """
 MEIA Framework: Multimodal Emotion, Intention, and Action Recognition
-Module: Master Training & Fine-Tuning Pipeline (VRAM-Optimized)
-Author: Imad Gohar and Rashid Riyadh, et al.
-Institution: Sunway University, Malaysia 
+Module: VRAM-Optimized Multi-Seed Training Pipeline (Master Script)
+Author: Rashid, et al.
+Institution: Sunway University, Malaysia
 
-This script serves as the primary execution engine for the MEIA framework.
-It integrates distributed data parallel (DDP) execution, gradient accumulation,
-and periodic garbage collection to fine-tune large-scale backbones (DINOv2 + RoBERTa)
-under strict hardware constraints.
+This script implements the definitive, memory-efficient training loop for the 
+MEIA framework. It leverages gradient accumulation and aggressive garbage 
+collection for stable multi-seed fine-tuning of large backbones (DINOv2 + RoBERTa).
 
 Usage:
     python scripts/train_meia.py \
@@ -40,17 +39,18 @@ hf_logging.set_verbosity_error()
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+# Main pipeline component mappings
 from models.meia_architecture import MEIAModel
 from training.eval import evaluate_tritask
 from data.multimodal_dataset import get_meia_dataloaders
 
 # =============================================================================
-# Optimization & Loss Engines
+# Dynamic Loss Engine
 # =============================================================================
 class TriTaskLossEngine(nn.Module):
     """
-    Multi-task optimization loss engine implementing Dynamic Inverse Weighting 
-    for Binary Cross-Entropy to counter structural long-tail distribution shifts.
+    Multi-task loss engine implementing Dynamic Inverse Weighting for BCE to 
+    mitigate long-tail imbalance on rare intentions and actions.
     """
     def __init__(
         self, 
@@ -85,7 +85,7 @@ class TriTaskLossEngine(nn.Module):
 
 
 def compute_dynamic_pos_weights(loader, device: torch.device, num_intent: int = 12, num_action: int = 15) -> Tuple[torch.Tensor, torch.Tensor]:
-    """Scans dataset distributions to dynamically assign inverse empirical class ratios."""
+    """Calculates inverse class weights over the dataset to balance BCE loss."""
     int_pos = torch.zeros(num_intent, device=device)
     act_pos = torch.zeros(num_action, device=device)
     total_samples = 0
@@ -103,31 +103,8 @@ def compute_dynamic_pos_weights(loader, device: torch.device, num_intent: int = 
     return pw_int, pw_act
 
 # =============================================================================
-# Infrastructure & Environment Configuration
+# Setup & Infrastructure
 # =============================================================================
-def setup_local_cache(repo_root: Path) -> None:
-    """Isolates model weight checkouts to local subdirectories."""
-    hf_hub_dir = (repo_root / "models" / "hf_hub").resolve()
-    torch_hub_dir = (repo_root / "models" / "torch_hub").resolve()
-
-    hf_hub_dir.mkdir(parents=True, exist_ok=True)
-    torch_hub_dir.mkdir(parents=True, exist_ok=True)
-
-    os.environ["HF_HOME"] = str(hf_hub_dir)
-    os.environ["TRANSFORMERS_CACHE"] = str(hf_hub_dir)
-    os.environ["HF_DATASETS_CACHE"] = str(hf_hub_dir)
-    os.environ["TORCH_HOME"] = str(torch_hub_dir)
-
-
-def validate_dataset_paths(repo_root: Path) -> None:
-    """Verifies targeted local partitions exist before initiating training."""
-    mine_curated_root = repo_root / "data" / "mine_curated"
-    fane_root = repo_root / "data" / "fane"
-    
-    assert mine_curated_root.exists(), f"Target reference directory not found: {mine_curated_root}"
-    assert fane_root.exists(), f"Target reference directory not found: {fane_root}"
-
-
 def setup_distributed() -> Tuple[int, int, int, torch.device]:
     if torch.cuda.is_available(): 
         torch.backends.cudnn.benchmark = True
@@ -145,11 +122,20 @@ def setup_distributed() -> Tuple[int, int, int, torch.device]:
     return 0, 1, 0, torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
+def validate_local_datasets(repo_root: Path) -> None:
+    """Ensures local annotated dataset splits exist before allocating GPU space."""
+    mine_path = repo_root / "data" / "mine_curated"
+    fane_path = repo_root / "data" / "fane"
+    
+    assert mine_path.exists(), f"Execution halted: Local MINE annotations directory missing at {mine_path}"
+    assert fane_path.exists(), f"Execution halted: Local FANE annotations directory missing at {fane_path}"
+
+
 def setup_logging(rank: int, output_dir: str) -> logging.Logger:
     log_path = Path(output_dir) / "training.log"
     log_path.parent.mkdir(parents=True, exist_ok=True)
     
-    logger = logging.getLogger("meia_training_core")
+    logger = logging.getLogger("meia_training")
     logger.setLevel(logging.INFO if rank == 0 else logging.WARNING)
     logger.propagate = False
     if logger.handlers: 
@@ -166,7 +152,7 @@ def setup_logging(rank: int, output_dir: str) -> logging.Logger:
     return logger
 
 # =============================================================================
-# Core Training & Evaluation Loops
+# Training & Evaluation Infrastructure
 # =============================================================================
 def train_one_epoch(model, train_loader, criterion, optimizer, scheduler, device, rank, logger, epoch, fp16=True):
     model.train()
@@ -174,7 +160,6 @@ def train_one_epoch(model, train_loader, criterion, optimizer, scheduler, device
     use_amp = fp16 and device.type == "cuda"
     scaler = torch.amp.GradScaler("cuda") if use_amp else None
     
-    # Virtual batch enlargement to stabilize structural cross-modal fine-tuning
     accumulation_steps = 8 
 
     for batch_idx, batch in enumerate(train_loader):
@@ -276,14 +261,14 @@ def evaluate_one_epoch(model, data_loader, criterion, device, rank, logger, spli
     avg_loss = total_loss / max(num_batches, 1)
     if rank == 0:
         logger.info(
-            "%s Split Evaluation | Loss: %.4f | Emo Acc: %.4f | Int F1: %.4f | Act F1: %.4f", 
+            "%s Loss: %.4f | Emo Acc: %.4f | Int F1: %.4f | Act F1: %.4f", 
             split_name, avg_loss, metrics["emotion_accuracy"], metrics["intention_macro_f1"], metrics["action_macro_f1"]
         )
         
     return avg_loss, metrics
 
 # =============================================================================
-# Execution Coordination
+# Multi-Seed Loop Configuration
 # =============================================================================
 def run_seed(seed, config, output_dir, rank, world_size, local_rank, device, logger):
     torch.manual_seed(seed)
@@ -293,7 +278,7 @@ def run_seed(seed, config, output_dir, rank, world_size, local_rank, device, log
 
     seed_dir = Path(output_dir) / f"seed_{seed}"
     seed_dir.mkdir(parents=True, exist_ok=True)
-    logger.info("Initializing runtime session for seed: %s", seed)
+    logger.info("Initializing MEIA Pipeline: Seed %s", seed)
 
     train_loader, val_loader, test_loader = get_meia_dataloaders(
         batch_size=config.get("batch_size", 16),
@@ -303,7 +288,7 @@ def run_seed(seed, config, output_dir, rank, world_size, local_rank, device, log
     )
 
     if rank == 0: 
-        logger.info("Computing dynamically scaled multi-task loss weight matrices...")
+        logger.info("Computing Inverse Class Weights for Multi-Task Loss Engine...")
         
     pw_int, pw_act = compute_dynamic_pos_weights(train_loader, device)
     
@@ -331,7 +316,7 @@ def run_seed(seed, config, output_dir, rank, world_size, local_rank, device, log
             if val_loss < best_val_loss:
                 best_val_loss, best_epoch = val_loss, epoch
                 torch.save((model.module if isinstance(model, DDP) else model).state_dict(), seed_dir / "best_model.pt")
-                logger.info("Target model metrics maximized. State dictionary persisted at epoch %d (val_loss=%.4f)", epoch, val_loss)
+                logger.info("Saved optimized model weights! Epoch %d (val_loss=%.4f)", epoch, val_loss)
 
     if (seed_dir / "best_model.pt").exists():
         (model.module if isinstance(model, DDP) else model).load_state_dict(torch.load(seed_dir / "best_model.pt", map_location=device))
@@ -354,7 +339,7 @@ def run_seed(seed, config, output_dir, rank, world_size, local_rank, device, log
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="MEIA Framework Native Optimization Training Loop")
+    parser = argparse.ArgumentParser(description="MEIA Framework Distributed Training (VRAM Optimized)")
     parser.add_argument("--config", type=str, default="configs/meia_training.json")
     parser.add_argument("--output-dir", type=str, default="checkpoints/results-final")
     parser.add_argument("--epochs", type=int, default=6)
@@ -374,26 +359,28 @@ def main() -> None:
 
     if rank == 0:
         logger.info("====================================================================")
-        logger.info(" MEIA Framework Architecture Execution: Multi-Seed Pipeline")
+        logger.info(" MEIA Framework - Multi-Seed Run (VRAM Optimized)")
         logger.info("====================================================================")
 
-    repo_root = Path.cwd().resolve()
-    setup_local_cache(repo_root)
-    validate_dataset_paths(repo_root)
+    # Pre-flight check on local files
+    repo_root = Path(__file__).resolve().parent.parent
+    if rank == 0:
+        validate_local_datasets(repo_root)
 
     all_results = []
     for seed in config.get("seeds", [41, 42, 43]):
         res = run_seed(seed, config, args.output_dir, rank, world_size, local_rank, device, logger)
         all_results.append(res)
         
+        # Explicit VRAM clearing between seeds to prevent memory leaks
         if torch.cuda.is_available():
             gc.collect()
             torch.cuda.empty_cache()
             if rank == 0:
-                logger.info("Flushing device runtime registers before initializing subsequent random allocations.")
+                logger.info("Garbage collection complete: GPU VRAM flushed for the next seed.")
 
     if rank == 0:
-        logger.info("Aggregating historical evaluation matrix profiles...")
+        logger.info("Training Execution Complete. Aggregating final metrics...")
         
         emo_accs = [r["test_emotion_accuracy"] for r in all_results]
         int_f1s = [r["test_intention_f1"] for r in all_results]
