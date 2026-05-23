@@ -2,7 +2,7 @@
 """
 MEIA Framework: Multimodal Emotion, Intention, and Action Recognition
 Module: VRAM-Optimized Multi-Seed Training Pipeline (Master Script)
-Author: Rashid, et al.
+Author: Imad Gohar and Rashid Riyadh, et al.
 Institution: Sunway University, Malaysia
 
 This script implements the definitive, memory-efficient training loop for the 
