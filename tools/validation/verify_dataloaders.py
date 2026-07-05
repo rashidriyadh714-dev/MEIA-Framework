@@ -2,8 +2,7 @@
 """
 MEIA Framework: Multimodal Emotion, Intention, and Action Recognition
 Module: Dataloader Split & Leakage Verification
-Author: Rashid, et al.
-Institution: Sunway University, Malaysia
+
 
 This utility performs a high-speed traversal of the dataloader boundaries 
 to verify subset composition and ensure zero data leakage between the 
