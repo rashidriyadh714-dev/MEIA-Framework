@@ -2,8 +2,7 @@
 """
 MEIA Framework: Multimodal Emotion, Intention, and Action Recognition
 Module: Dataset Split & Class Distribution Analysis
-Author: Rashid, et al.
-Institution: Sunway University, Malaysia
+
 
 This script analyzes the class distribution across all data subsets. It is 
 used to quantify the long-tailed imbalance for the Emotion (Single-Label), 
