@@ -1,6 +1,6 @@
 # MEIA-Framework
 
-A multimodal framework for enhanced image analysis and understanding.
+A multimodal framework for joint Emotion, Intention adn Action Recognition.
 
 ## Project Structure
 
