@@ -31,7 +31,7 @@ A multimodal framework for joint Emotion, Intention adn Action Recognition.
 │   │   ├── distill_llama_annotations.py
 │   │   ├── balance_fane.py
 │   │   ├── predownload_assets.py
-│   │   └── organize_paper_data.py
+│   │   
 │   │
 │   ├── validation/
 │   │   ├── check_cloud_dataset_ready.py
